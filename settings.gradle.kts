@@ -1,4 +1,5 @@
 rootProject.name = "universe"
 include(
-    ":passbook"
+    ":passbook",
+    ":scheduler",
 )
