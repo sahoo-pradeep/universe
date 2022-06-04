@@ -30,9 +30,9 @@ allprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
     }
-}
 
-dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    dependencies {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+        implementation("io.github.microutils:kotlin-logging-jvm:2.1.21")
+    }
 }

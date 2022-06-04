@@ -1,0 +1,7 @@
+CREATE TABLE job (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL UNIQUE,
+    version SMALLINT NOT NULL,
+    cron VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
