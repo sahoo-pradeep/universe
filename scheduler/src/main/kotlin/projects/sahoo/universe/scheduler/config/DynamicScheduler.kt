@@ -1,5 +1,6 @@
 package projects.sahoo.universe.scheduler.config
 
+import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.TaskScheduler
@@ -20,10 +21,9 @@ class DynamicScheduler(
     private val jobService: JobService
 ) : SchedulingConfigurer {
 
-    // TODO: logging
-
-    private var scheduledTaskRegistrar: ScheduledTaskRegistrar? = null
+    private val logger = KotlinLogging.logger { }
     private val scheduledJobs = mutableMapOf<String, ScheduledFuture<*>>()
+    private var scheduledTaskRegistrar: ScheduledTaskRegistrar? = null
 
     @Bean
     fun poolScheduler(): TaskScheduler {
@@ -40,17 +40,38 @@ class DynamicScheduler(
         initJobs()
     }
 
-    private fun initJobs() =
-        jobService.getAllActiveJobs().forEach {
+    private fun initJobs() {
+        logger.info { "Initializing Jobs" }
+        val jobs = jobService.getAllActiveJobs()
+        logger.info { "Found ${jobs.size} active jobs" }
+        jobs.forEach {
             scheduledTaskRegistrar?.scheduler?.schedule({ jobService.executeJob(it) }, CronTrigger(it.cron))!!
                 .let { future -> scheduledJobs[it.name] = future }
         }
-
-    fun addJob(job: Job) {
-        TODO("NOT YET IMPLEMENTED")
     }
 
-    fun removeJob(job: Job) {
-        TODO("NOT YET IMPLEMENTED")
+    fun addJob(job: Job): Boolean {
+        if (scheduledJobs[job.name] != null) {
+            logger.info { "Job ${job.name} is already added. Ignoring add job request" }
+            return false
+        }
+
+        scheduledTaskRegistrar?.scheduler?.schedule({ jobService.executeJob(job) }, CronTrigger(job.cron))!!
+            .let { future -> scheduledJobs[job.name] = future }
+        return true
     }
+
+    fun removeJob(job: Job): Boolean {
+        if (scheduledJobs[job.name] == null) {
+            logger.info { "Job ${job.name} doesn't exist. Ignoring remove job request" }
+            return false
+        }
+
+        scheduledJobs[job.name]!!.cancel(true)
+        scheduledJobs.remove(job.name)
+        return true
+    }
+
+    fun updateJob(job: Job): Boolean =
+        removeJob(job) && addJob(job)
 }
